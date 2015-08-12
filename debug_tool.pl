@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use Sys::Hostname;
 
 #golbal variable
 my $server_log_dir_1="/tmp/gpd_etl_service.log*";
@@ -16,35 +17,59 @@ my $client_soc_dir_1="/var/opt/hp93000/soc/calibration/std__*";
 my $client_soc_dir_2="/var/opt/hp93000/soc/calibration/rf/*";
 my $client_soc_dir_3="/var/opt/hp93000/soc/tracecal/*";
 
-my $re_opt;
-#
+#generate the packaged file name
+my $host=hostname();
+my($sec,$min,$hour,$day,$mon,$year)=localtime(time);
+my $datetime=sprintf("%d%02d%02d%02d%02d%02d",$year+1900,$mon+1,$day,$hour,$min,$sec);
+my $file_name="$host"."_"."$datetime"."debug_mesg_files.tar.gz";
 
+#option
+my $re_opt;
+if($#ARGV==-1 || $#ARGV==0 ||$#ARGV==1)
+{   &tool_usage;}
+elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 {
-    if($ARGV[0]=~/-a|-lc|-laf/i)
+    if($ARGV[2]=~/-a|-lfd|-ldf|-fld|-fdl|-dlf|-dfl/)
     {
-        print"all\n";
-    }
-    elsif($ARGV[0]=~/-ld|-dl/)
-    {
-	my @re_log=&getS_log_files;
-	my @re_db=&getS_db_files;
-	my @merg_logdb=(@re_log,@re_db);
-	#print"$#merg_logdb";
-	if($#merg_logdb!=-1)
-	{
-	    $re_opt=system("tar -cf ./debug_ms_files.tar.gz  @merg_logdb 1>./shellopt 2>./shellopt");
-     	    &pt_mesg($re_opt);
-	}
+	if($#ARGV>2)
+	{   &tool_usage;}
 	else
 	{
-	    print"FAILURE:no file found\n";
-	    unlink "shellopt";
-	    exit;
+	    my @re_allS=&getS_all_files;
+	    if($#re_allS!=-1)
+	    {
+	        $re_opt=system("tar -cf ./$file_name  @re_allS 1>./shellopt 2>./shellopt");
+     	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {   &pt_nf_mesg;}
 	}
     }
-    elsif($ARGV[0]=~/-lf|-fl/)
+    elsif($ARGV[2]=~/-ld|-dl/)
     {
-	if($#ARGV==0)
+	if($#ARGV>2)
+	{   &tool_usage;}
+	else
+	{
+	    my @re_log=&getS_log_files;
+	    my @re_db=&getS_db_files;
+	    my @merg_logdb=(@re_log,@re_db);
+	    #print"$#merg_logdb";
+	    if($#merg_logdb!=-1)
+	    {
+	        $re_opt=system("tar -cf ./$file_name @merg_logdb 1>./shellopt 2>./shellopt");
+     	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {
+	        unlink "shellopt";
+	        &pt_nf_mesg;
+	    }
+	}
+    }
+    elsif($ARGV[2]=~/-lf|-fl/)
+    {
+	if($#ARGV==2)
 	{   &tool_usage;}
 	else
 	{
@@ -53,20 +78,16 @@ my $re_opt;
 	    my @merg_loghn=(@re_log,@re_hn);
 	    if($#merg_loghn!=-1)
 	    {
-	        $re_opt=system("tar -cf ./debug_ms_files.tar.gz  @merg_loghn 1>./shellopt 2>./shellopt");
+	        $re_opt=system("tar -cf ./$file_name  @merg_loghn 1>./shellopt 2>./shellopt");
      	        &pt_mesg($re_opt);
 	    }
 	    else
-	    {
-	        print"FAILURE:no file found\n";
-	        exit;
-	    }
+	    {   &pt_nf_mesg;}
 	}
-	
     }
-    elsif($ARGV[0]=~/-df|-fd/)
+    elsif($ARGV[2]=~/-df|-fd/)
     {
-	if($#ARGV==0)
+	if($#ARGV==2)
 	{   &tool_usage;}
 	else
 	{
@@ -76,39 +97,50 @@ my $re_opt;
 	    my @merg_dbhn=(@re_db,@re_hn);
 	    if($#merg_dbhn!=-1)
 	    {
-	        $re_opt=system("tar -cf ./debug_ms_files.tar.gz  @merg_dbhn 1>./shellopt 2>./shellopt");
+	        $re_opt=system("tar -cf ./$file_name @merg_dbhn 1>./shellopt 2>./shellopt");
      	        &pt_mesg($re_opt);
 	    }
 	    else
 	    {
-	        print"FAILURE:no file found\n";
 		unlink"shellopt";
-	        exit;
+		&pt_nf_mesg;
 	    }
 	}
-	
     }
-    elsif($ARGV[0]=~/-l/i)
+    elsif($ARGV[2]=~/-l/)
     {
-        
-    }
-    elsif($ARGV[0]=~/-d/i)
-    {
-	my @re_db= &getS_db_files;
-        if($#re_db!=-1)
- 	{
-	    $re_opt=system("tar -cf ./debug_ms_files.tar.gz  @re_db 1>./shellopt 2>./shellopt");
-	    &pt_mesg($re_opt);
-	}
+	if($#ARGV>2)
+	{   &tool_usage;}
 	else
 	{
-	    print"FAILURE:no file found\n";
-            exit;
+	    my @re_log=&getS_log_files;
+	    if($#re_log!=-1)
+	    {
+	        $re_opt=system("tar -cf ./$file_name  @re_log 1>./shellopt 2>./shellopt");
+     	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {   &pt_nf_mesg;}
 	}
     }
-    elsif($ARGV[0]=~/-f/i)
+    elsif($ARGV[2]=~/-d/)
+    {if($#ARGV>2)
+	{   &tool_usage;}
+	else
+	{
+	    my @re_db= &getS_db_files;
+            if($#re_db!=-1)
+ 	    {
+	        $re_opt=system("tar -cf ./$file_name  @re_db 1>./shellopt 2>./shellopt");
+	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {   &pt_nf_mesg;}
+	}
+    }
+    elsif($ARGV[2]=~/-f/)
     {
-	if($#ARGV==0)
+	if($#ARGV==2)
 	{   &tool_usage;}
 	else
 	{
@@ -116,33 +148,73 @@ my $re_opt;
 	    print"@re_hn\n";
 	    if($#re_hn!=-1)
  	    {
-	        $re_opt=system("tar -cf ./debug_ms_files.tar.gz  @re_hn 1>./shellopt 2>./shellopt");
+	        $re_opt=system("tar -cf ./$file_name  @re_hn 1>./shellopt 2>./shellopt");
 	        &pt_mesg($re_opt);
 	    }
 	    else
-	    {
-	        print"FAILURE:no file found\n";
-                exit;
-	    }
-	}
-    }
-    elsif($ARGV[0]=~/-c/i)
-    {
-        my @re_soc= &getC_soc_files;
-        print"@re_soc";
-	if($#re_soc!=-1)
-	{
-            $re_opt=system("tar -cf ./debug_ms_files.tar.gz  @re_soc 1>./shellopt 2>./shellopt");
-     	    &pt_mesg($re_opt);
-	}
-	else
-	{
-	    print"FAILURE:no file found\n";
-	    exit;
+	    {   &pt_nf_mesg;}
 	}
     }
     else
     {   &tool_usage;}
+}
+elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/tester/)
+{
+    if($ARGV[2]=~/-a\z|-lc|-cl/)
+    {
+	if($#ARGV>2)
+	{   &tool_usage;}
+	else
+	{
+	    my @re_allC=&getC_all_files;
+	    if($#re_allC!=-1)
+	    {
+	        $re_opt=system("tar -cf ./$file_name  @re_allC 1>./shellopt 2>./shellopt");
+     	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {   &pt_nf_mesg;}
+	}
+    }
+    elsif($ARGV[2]=~/-l\z/)
+    {
+	if($#ARGV>2)
+	{   &tool_usage;}
+	else
+	{
+	    my @re_log=&getC_log_files;
+	    if($#re_log!=-1)
+	    {
+	        $re_opt=system("tar -cf ./$file_name  @re_log 1>./shellopt 2>./shellopt");
+     	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {   &pt_nf_mesg;}
+	}
+    }
+    elsif($ARGV[2]=~/-c\z/)
+    {
+        my @re_soc= &getC_soc_files;
+        #print"@re_soc";
+	if($#re_soc!=-1)
+	{
+            $re_opt=system("tar -cf ./$file_name  @re_soc 1>./shellopt 2>./shellopt");
+     	    &pt_mesg($re_opt);
+	}
+	else
+	{   &pt_nf_mesg;}
+    }
+    else
+    {   &tool_usage;}
+}
+else
+{   &tool_usage;}
+#print not found message
+sub pt_nf_mesg
+{
+    print"FAILURE:No file found\n";
+    print"WARNNING: Make sure that you are using correct option\n";
+    exit;
 }
 #print message
 sub pt_mesg
@@ -161,8 +233,10 @@ sub pt_mesg
 #usage
 sub tool_usage
 {
-    print"Usage:\n Debug_tool [option]\n [option]:\n";
-    print" -a: get all files\n -l get log files\n -d get DB files\n -f get client files only server (-f -ALL or hostname)\n -c get client files only client\n";
+    print"Usage:\n Debug_tool [option] [option]\n [option]:\n";
+    print" -m select server or client\n server\n";
+    print" -a get all files\n -l get log files\n -d get DB files\n -f get hn files(-f -ALL or hostname)\n client\n";
+    print" -a get all files\n -l get log files\n -c get soc files\n";
     print"Try -help\n";exit;
 }
 
@@ -170,7 +244,7 @@ sub tool_usage
 sub getS_all_files
 {
     my @re_log=&getS_log_files;
-    my @re_db=&getS_db_filse;
+    my @re_db=&getS_db_files;
     my @re_hn= &getS_hn_files;
     my @allS_files=(@re_log,@re_db,@re_hn);
     return @allS_files;
@@ -208,19 +282,24 @@ sub getS_hn_files
     my @hn_arr1;
     my @hn_arr2;
     my @hn_arr3;
-    if($ARGV[1]=~/-ALL/)
+    if($ARGV[2]=~/-a|-lfd|-ldf|-fld|-fdl|-dlf|-dfl/ || $ARGV[3]=~/-ALL/)
     {
-	@hn_arr1=glob "$server_hn_dir_1/*";
-	@hn_arr2=glob "$server_hn_dir_2/*";
-	@hn_arr3=glob "$server_hn_dir_3/*";
-	@all_hn_files=(@hn_arr1,@hn_arr2,@hn_arr3);
-	return @all_hn_files;
+        if($#ARGV>2)
+	{   &tool_usage;}
+	else
+	{
+	   @hn_arr1=glob "$server_hn_dir_1/*";
+	   @hn_arr2=glob "$server_hn_dir_2/*";
+	   @hn_arr3=glob "$server_hn_dir_3/*";
+	   @all_hn_files=(@hn_arr1,@hn_arr2,@hn_arr3);
+	   return @all_hn_files;
+	}
     }
     else
     {
 	foreach my $hostname(@ARGV)
 	{
-	    if($hostname eq($ARGV[0]))
+	    if($hostname eq($ARGV[0]) || $hostname eq($ARGV[1] || $hostname eq($ARGV[2])))
 	    {   next;}
 	    else
 	    {
