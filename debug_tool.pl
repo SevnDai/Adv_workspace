@@ -194,15 +194,20 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/tester/)
     }
     elsif($ARGV[2]=~/-c\z/)
     {
-        my @re_soc= &getC_soc_files;
-        #print"@re_soc";
-	if($#re_soc!=-1)
-	{
-            $re_opt=system("tar -cf ./$file_name  @re_soc 1>./shellopt 2>./shellopt");
-     	    &pt_mesg($re_opt);
-	}
+	if($#ARGV>2)
+	{   &tool_usage;}
 	else
-	{   &pt_nf_mesg;}
+	{
+            my @re_soc= &getC_soc_files;
+            #print"@re_soc";
+	    if($#re_soc!=-1)
+	    {
+                $re_opt=system("tar -cf ./$file_name  @re_soc 1>./shellopt 2>./shellopt");
+     	        &pt_mesg($re_opt);
+	    }
+	    else
+	    {   &pt_nf_mesg;}
+	}
     }
     else
     {   &tool_usage;}
@@ -284,9 +289,6 @@ sub getS_hn_files
     my @hn_arr3;
     if($ARGV[2]=~/-a|-lfd|-ldf|-fld|-fdl|-dlf|-dfl/ || $ARGV[3]=~/-ALL/)
     {
-        if($#ARGV>2)
-	{   &tool_usage;}
-	else
 	{
 	   @hn_arr1=glob "$server_hn_dir_1/*";
 	   @hn_arr2=glob "$server_hn_dir_2/*";
