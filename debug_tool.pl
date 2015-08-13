@@ -27,9 +27,9 @@ my $file_name="$host"."_"."$datetime"."debug_mesg_files.tar.gz";
 my $re_opt;
 if($#ARGV==-1 || $#ARGV==0 ||$#ARGV==1)
 {   &tool_usage;}
-elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
+elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server\z/)
 {
-    if($ARGV[2]=~/-a|-lfd|-ldf|-fld|-fdl|-dlf|-dfl/)
+    if($ARGV[2]=~/-a\z|-lfd\z|-ldf\z|-fld\z|-fdl\z|-dlf\z|-dfl\z/)
     {
 	if($#ARGV>2)
 	{   &tool_usage;}
@@ -45,7 +45,7 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 	    {   &pt_nf_mesg;}
 	}
     }
-    elsif($ARGV[2]=~/-ld|-dl/)
+    elsif($ARGV[2]=~/-ld\z|-dl\z/)
     {
 	if($#ARGV>2)
 	{   &tool_usage;}
@@ -67,7 +67,7 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 	    }
 	}
     }
-    elsif($ARGV[2]=~/-lf|-fl/)
+    elsif($ARGV[2]=~/-lf\z|-fl\z/)
     {
 	if($#ARGV==2)
 	{   &tool_usage;}
@@ -85,7 +85,7 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 	    {   &pt_nf_mesg;}
 	}
     }
-    elsif($ARGV[2]=~/-df|-fd/)
+    elsif($ARGV[2]=~/-df\z|-fd\z/)
     {
 	if($#ARGV==2)
 	{   &tool_usage;}
@@ -107,7 +107,7 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 	    }
 	}
     }
-    elsif($ARGV[2]=~/-l/)
+    elsif($ARGV[2]=~/-l\z/)
     {
 	if($#ARGV>2)
 	{   &tool_usage;}
@@ -123,7 +123,7 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 	    {   &pt_nf_mesg;}
 	}
     }
-    elsif($ARGV[2]=~/-d/)
+    elsif($ARGV[2]=~/-d\z/)
     {if($#ARGV>2)
 	{   &tool_usage;}
 	else
@@ -138,14 +138,14 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
 	    {   &pt_nf_mesg;}
 	}
     }
-    elsif($ARGV[2]=~/-f/)
+    elsif($ARGV[2]=~/-f\z/)
     {
 	if($#ARGV==2)
 	{   &tool_usage;}
 	else
 	{
 	    my @re_hn=&getS_hn_files;
-	    print"@re_hn\n";
+	    #print"@re_hn\n";
 	    if($#re_hn!=-1)
  	    {
 	        $re_opt=system("tar -cf ./$file_name  @re_hn 1>./shellopt 2>./shellopt");
@@ -158,9 +158,9 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server/)
     else
     {   &tool_usage;}
 }
-elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/tester/)
+elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/tester\z/)
 {
-    if($ARGV[2]=~/-a\z|-lc|-cl/)
+    if($ARGV[2]=~/-a\z|-lc\z|-cl\z/)
     {
 	if($#ARGV>2)
 	{   &tool_usage;}
@@ -226,12 +226,12 @@ sub pt_mesg
 {
        if($_[0])
         {
-	    print"FAILURE:collect the ms failure!\n";
+	    print"FAILURE:Collect the files failure!\n";
 	    unlink "shellopt";exit;
         }
 	else
 	{
-	    print"SUCCESS:collect the ms sucess!\n";
+	    print"SUCCESS:Collect the files success!\n";
 	    unlink "shellopt";exit;
 	}
 }
@@ -269,12 +269,12 @@ sub getS_db_files
     $re_opt=system("mysqldump -uroot -pem93k2015 -R endurance >/tmp/endurance.sql 1>./shellopt 2>./shellopt");
     if($re_opt)
     {
-	print"FAILURE:can't collect the db files\n";
+	print"FAILURE:Can't collect the db files\n";
 	my @empty;return @empty;
     } 
     else
     {
-	print"SUCCESS:collected the db files\n";
+	print"SUCCESS:Collected the db files\n";
         my @all_db=glob "/tmp/endurance.sql";
 	return @all_db;
     }
@@ -301,13 +301,18 @@ sub getS_hn_files
     {
 	foreach my $hostname(@ARGV)
 	{
-	    if($hostname eq($ARGV[0]) || $hostname eq($ARGV[1] || $hostname eq($ARGV[2])))
+	    if($hostname eq($ARGV[0]) || $hostname eq($ARGV[1]) || $hostname eq($ARGV[2]))
 	    {   next;}
 	    else
 	    {
 	        @hn_arr1=glob "$server_hn_dir_1/$hostname*";
 	        @hn_arr2=glob "$server_hn_dir_2/$hostname*";
 	        @hn_arr3=glob "$server_hn_dir_3/$hostname*";
+	    }
+	    if($#hn_arr1==-1 && $#hn_arr2==-1 && $#hn_arr3==-1)
+	    {   
+		print"WARNNING:Can't find the $hostname ,make sure that your option are correct\n";
+		next;
 	    }
 	    foreach my $hostname_files(@hn_arr1,@hn_arr2,@hn_arr3)
 	    {
