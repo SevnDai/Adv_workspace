@@ -25,13 +25,14 @@ my($sec,$min,$hour,$day,$mon,$year)=localtime(time);
 my $datetime=sprintf("%d%02d%02d%02d%02d%02d",$year+1900,$mon+1,$day,$hour,$min,$sec);
 my $file_name="$host"."_"."$datetime"."debug_mesg_files.tar.gz";
 
-mkdir './debug',0755 or warn "can't make debug directory:$!\n";
+
 #option
 my $re_opt;
 if($#ARGV==-1 || $#ARGV==0 ||$#ARGV==1)
 {   &tool_usage;}
 elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server\z/)
 {
+    mkdir './debug',0755;
     if($ARGV[2]=~/-a\z|-lfd\z|-ldf\z|-fld\z|-fdl\z|-dlf\z|-dfl\z/)
     {
 	if($#ARGV>2)
@@ -57,7 +58,6 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server\z/)
 	    my @re_log=&getS_log_files;
 	    my @re_db=&getS_db_files;
 	    my @merg_logdb=(@re_log,@re_db);
-	    #print"$#merg_logdb";
 	    if($#merg_logdb!=-1)
 	    {
 	        $re_opt=system("tar -cf ./$file_name @merg_logdb 1>./shellopt 2>./shellopt");
@@ -96,7 +96,6 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server\z/)
 	{
 	    my @re_db=&getS_db_files;
 	    my @re_hn=&getS_hn_files;
-	    #print"@re_hn\n";
 	    my @merg_dbhn=(@re_db,@re_hn);
 	    if($#merg_dbhn!=-1)
 	    {
@@ -163,6 +162,7 @@ elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/server\z/)
 }
 elsif($ARGV[0]=~/-m\z/ && $ARGV[1]=~/tester\z/)
 {
+    mkdir './debug',0755;
     if($ARGV[2]=~/-a\z|-lc\z|-cl\z/)
     {
 	if($#ARGV>2)
@@ -220,10 +220,10 @@ else
 #print not found message
 sub pt_nf_mesg
 {
+    print"WARNNING:Make sure that you are using correct option\n";
     print"FAILURE:No file found\n";
-    print"WARNNING: Make sure that you are using correct option\n";
     system("rm -rf ./debug");
-    exit;
+    unlink "shellopt";exit;
 }
 #print message
 sub pt_mesg
@@ -237,6 +237,7 @@ sub pt_mesg
 	else
 	{
 	    print"SUCCESS:Collect the files success!\n";
+	    print"The output file in the current directory,named \"hostname+date+debug_mesg_files.tar.gz\"\n";
 	    system("rm -rf ./debug");
 	    unlink "shellopt";exit;
 	}
@@ -246,10 +247,13 @@ sub tool_usage
 {
     print"Version	:	$tool_version\n";
     print"Usage:\n Debug_tool [option] [option]\n [option]:\n";
-    print" -m [server/tester]	:	Debug on server or tester\n server\n";
-    print" -a get all files\n -l get log files\n -d get DB files\n -f [-ALL/hostname]	:	Get data of all testers or some testers with hostname specified\n client\n";
-    print" -a get all files\n -l get log files\n -c get soc files\n";
-    print"Try -help\n";exit;
+    print" -m [server/tester]	:	Debug on server or tester\n";
+    print" -a 	:	Get all data on server or tester\n -l 	:	Get log data on server or tester\n";
+    print" -f [-ALL/hostname]	:	Get data of all testers or some testers with hostname specified\n";
+    print" -d 	:	Get database files on server \n -c 	:	Get soc data on tester\n";
+    print"Example	:	Debug_tool -m server -f -ALL\n";
+    print"Try --help\n";
+    system("rm -rf ./debug");exit;
 }
 
 #get server all files
@@ -270,7 +274,7 @@ sub getS_log_files
     my @all_log=(@log_arr_1,@log_arr_2,@log_arr_3);
     if($#all_log!=-1)
     {
-	mkdir './debug/log',0755 or warn "can't make cal directory:$!\n";
+	mkdir './debug/log',0755;
 	system("mv @all_log ./debug/log 1>./shellopt 2>./shellopt");
 	my @zip_dir_files=glob "./debug/log/*";
 	return @zip_dir_files;
@@ -290,7 +294,7 @@ sub getS_db_files
     else
     {
 	print"SUCCESS:Collected the database files\n";
-	mkdir './debug/database',0755 or warn "can't make database directory:$!\n";
+	mkdir './debug/database',0755;
 	system("mv /tmp/endurance.sql ./debug/database 1>./shellopt 2>./shellopt");
 	my @zip_dir_files=glob "./debug/database/*";
 	return @zip_dir_files;
@@ -303,26 +307,26 @@ sub getS_hn_files
     my @hn_arr1;
     my @hn_arr2;
     my @hn_arr3;
-    mkdir './debug/data',0755 or warn "can't make data directory:$!\n";
+    mkdir './debug/data',0755;
     if($ARGV[2]=~/-a|-lfd|-ldf|-fld|-fdl|-dlf|-dfl/ || $ARGV[3]=~/-ALL/)
     {
 	{
 	   @hn_arr1=glob "$server_hn_dir_1/*";
 	   if($#hn_arr1!=-1)
 	   {
-		mkdir './debug/data/down',0755 or warn "can't make down directory:$!\n";
+		mkdir './debug/data/down',0755;
 		system("mv @hn_arr1 ./debug/data/down 1>./shellopt 2>./shellopt");
 	   }
 	   @hn_arr2=glob "$server_hn_dir_2/*";
 	   if($#hn_arr2!=-1)
 	   {
-		mkdir './debug/data/error',0755 or warn "can't make error directory:$!\n";
+		mkdir './debug/data/error',0755;
 		system("mv @hn_arr2 ./debug/data/error 1>./shellopt 2>./shellopt");
 	   }
 	   @hn_arr3=glob "$server_hn_dir_3/*";
 	   if($#hn_arr3!=-1)
 	   {
-		mkdir './debug/data/processing',0755 or warn "can't make processing directory:$!\n";
+		mkdir './debug/data/processing',0755;
 		$re_opt=system("mv @hn_arr3 ./debug/data/processing 1>./shellopt 2>./shellopt");
 	   }
 	}
@@ -338,24 +342,24 @@ sub getS_hn_files
 	        @hn_arr1=glob "$server_hn_dir_1/$hostname*";
 		 if($#hn_arr1!=-1)
 		{
-			mkdir './debug/data/down',0755 or warn "can't make down directory:$!\n";
+			mkdir './debug/data/down',0755 ;
 			system("mv @hn_arr1 ./debug/data/down 1>./shellopt 2>./shellopt");
 		}
 	        @hn_arr2=glob "$server_hn_dir_2/$hostname*";
 		if($#hn_arr2!=-1)
 		{
-			mkdir './debug/data/error',0755 or warn "can't make error directory:$!\n";
+			mkdir './debug/data/error',0755 ;
 			system("mv @hn_arr2 ./debug/data/error 1>./shellopt 2>./shellopt");
 		}
 	        @hn_arr3=glob "$server_hn_dir_3/$hostname*";
 		if($#hn_arr3!=-1)
 		{
-			mkdir './debug/data/processing',0755 or warn "can't make processing directory:$!\n";
-			$re_opt=system("mv @hn_arr3 ./debug/data/processing 1>./shellopt 2>./shellopt");
+			mkdir './debug/data/processing',0755 ;
+			system("mv @hn_arr3 ./debug/data/processing 1>./shellopt 2>./shellopt");
 		}
 	    }
 	    if($#hn_arr1==-1 && $#hn_arr2==-1 && $#hn_arr3==-1)
-	    {   print"WARNNING:Can't find the $hostname ,make sure that your option are correct\n";}
+	    {   print"WARNNING:Can't find the $hostname ,make sure that your hostname are correct\n";}
 	}
     }
     my @zip_dir_down=glob "./debug/data/down/*";
@@ -381,7 +385,7 @@ sub getC_log_files
     my @all_log=(@log_arr_1,@log_arr_2);
     if($#all_log!=-1)
     {
-	mkdir './debug/log',0755 or warn "can't make cal directory:$!\n";
+	mkdir './debug/log',0755;
 	system("mv @all_log ./debug/log 1>./shellopt 2>./shellopt");
 	my @zip_dir_files=glob "./debug/log/*";
 	return @zip_dir_files;
@@ -398,7 +402,7 @@ sub getC_soc_files
     my @all_soc=(@soc_arr_1,@soc_arr_2,@soc_arr_3);
     if($#all_soc!=-1)
     {
-	mkdir './debug/cal',0755 or warn "can't make cal directory:$!\n";
+	mkdir './debug/cal',0755;
 	system("mv @all_soc ./debug/cal 1>./shellopt 2>./shellopt");
 	my @zip_dir_files=glob "./debug/cal/*";
 	return @zip_dir_files;
